@@ -1,0 +1,122 @@
+fire = [
+  {
+    "Year": 2011,
+    "Burned Area (ha)": 0,
+    "Number of Fires": 0
+  },
+  {
+    "Year": 2012,
+    "Burned Area (ha)": 0,
+    "Number of Fires": 0
+  },
+  {
+    "Year": 2013,
+    "Burned Area (ha)": 133,
+    "Number of Fires": 1
+  },
+  {
+    "Year": 2014,
+    "Burned Area (ha)": 0,
+    "Number of Fires": 0
+  },
+  {
+    "Year": 2015,
+    "Burned Area (ha)": 105,
+    "Number of Fires": 2
+  },
+  {
+    "Year": 2016,
+    "Burned Area (ha)": 314,
+    "Number of Fires": 3
+  },
+  {
+    "Year": 2017,
+    "Burned Area (ha)": 57,
+    "Number of Fires": 1
+  },
+  {
+    "Year": 2018,
+    "Burned Area (ha)": 3622,
+    "Number of Fires": 33
+  },
+  {
+    "Year": 2019,
+    "Burned Area (ha)": 2006,
+    "Number of Fires": 12
+  },
+  {
+    "Year": 2020,
+    "Burned Area (ha)": 314,
+    "Number of Fires": 6
+  },
+  {
+    "Year": 2021,
+    "Burned Area (ha)": 121,
+    "Number of Fires": 3
+  },
+  {
+    "Year": 2022,
+    "Burned Area (ha)": 4293,
+    "Number of Fires": 32
+  },
+  {
+    "Year": 2023,
+    "Burned Area (ha)": 751,
+    "Number of Fires": 3
+  }
+]
+
+import numpy as np
+from matplotlib import pyplot as plt
+import random
+
+#Zeitintervall:
+c = len(fire)-1
+T = [fire[c]['Year']]
+n_steps = len(fire) #Zeitchritte
+t = np.linspace(0,T,n_steps)
+
+#Random array Temperatur:
+temp = np.zeros(n_steps)
+begin = 20 #Anfangstemp
+temp[0] = begin
+temp_max = 60
+temp_min = 0
+for i in range(n_steps):
+    temp[i] = random.randint(temp_min, temp_max)
+
+#Random array Niederschlag:
+rain = np.zeros(n_steps)
+begin = 0 #Anfangsniederschalg
+rain[0] = begin
+rain_max = 5
+rain_min = 0
+for i in range(n_steps):
+    rain[i] = random.randint(rain_min, rain_max)
+    
+#Grenzwert 
+limitvalue = 30 #Grenzwert
+limit = np.zeros(n_steps)
+for i in range(n_steps):
+    limit[i] = limitvalue #fire[i]['Number of Fires']
+
+
+#Korrolationsparameter 
+korro = np.zeros(n_steps)
+temp_alarm =[]
+for i in range(n_steps):
+    korro[i] = (temp[i] - 20* rain[i])
+    if korro[i] >= limit[i]:
+        print("\x1B[31mALARM\x1B[0m")
+        limit[i] = korro[i]
+        b = korro[i].tolist()
+        temp_alarm.append(b)
+print(temp_alarm)
+
+
+plt.figure()
+xvals = np.linspace(0,T,200) 
+plt.plot(t, limit, color='red')  #Grenzwerfkt
+plt.plot(t, korro, color='blue')  #korrolationsfkt
+plt.legend(['Grenzwert', 'Schwankung'])
+plt.show

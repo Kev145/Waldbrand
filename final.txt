@@ -1,0 +1,130 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import joblib
+import shutil
+
+zeit = 6
+g = 0
+
+#aktuelle temperatur und Niederschlag von städten in NRW
+vorhersage = {
+    'Gelsenkirchen': (6.0392, 50.9593, 17.5, 0, 19,  0, 29.7, 0, 18.5, 11.7, 19.7, 0, 20, 0),
+    'Kall': (6.5264, 50.5014, 24.2, 0, 23.5, 0, 24.2, 0.9, 20.9, 6.4, 19.6, 2.2, 16.9, 0),
+    'Paenburch': (9.2710, 51.8664, 24.3, 0, 23.5, 0, 22.7, 0, 24.9, 0.5, 19.0, 13.9, 19.3, 0),
+    'Kleve': (6.0954, 51.7612, 26.2, 0, 23.5, 0, 24.4, 0.9 ,25.5, 1.8, 18.8, 10.5, 20.2, 7.5),
+    'Gevelsberg': (7.3412, 51.3329, 25.1, 0, 23.7, 0, 24.4, 0.3, 26.2, 0.3, 18.1, 22.5, 19.3, 2.0), 
+    'Kleinendorf': (8.5906, 52.4461, 23.1, 0, 25.1, 0, 24.2, 0.2, 26.5, 0, 21.1, 5.1, 20.1, 0.2),
+    'Lippstadt': (8.3945, 51.6336, 26.6, 0, 24.8, 0, 23.8, 0, 27.5, 0, 19.3, 15.2, 19.9, 0),
+    'Aachen': (6.0244, 50.7983, 23.8, 0, 22.6, 0, 24.1, 1.1, 20.5, 4.9, 18.9, 14.1, 19.1, 0.3),
+    'Düsseldorf': (6.7686, 51.2960, 26.0, 0, 24.4, 0, 25.4, 0.9, 26.2, 0.7, 19.3, 23.3, 20.5, 0),
+    'Münster': (7.6261, 51.9607, 23.7, 0, 24.5, 0, 24.5, 0.1, 26.4, 0.4, 18.9, 7.2, 20.3, 0), 
+    'Cologne': (6.9603, 50.9375, 25.9, 0, 25.6, 0, 25.4, 0.9, 28.1, 1.5, 20.1, 30.8, 21.6, 0)}
+#vorhersage datum
+datum = ['21.08.2022', '22.08.2022', '23.08.2022', '24.08.2022', '25.08.2023', '26.08.2023']
+
+for time in range(zeit): #zeitlicher verlauf
+        ##Erstelle leere Karte
+    nrw_data = gpd.read_file('NRW.json')#NRW-Daten
+    fig, ax = plt.subplots(figsize=(12, 10))# Erstelle eine leere Karte
+    ax.set_aspect('equal')# Zeichne Deutschland
+    nrw_data.plot(ax=ax, color='lightblue', edgecolor='black')
+    
+        ##Wetterstandorte markieren
+    excel_path = 'Klimastationen.xlsx' # Pfad zur heruntergeladenen Excel-Datei
+    data = pd.read_excel(excel_path) # Lese die Excel-Datei ein
+    b = len(data)#wie viele zeiteln
+    wetterstation = {}
+    wetterneu ={}
+    # erstelle diconary mit {Ort : (Breite,Länge)}
+    for i in range(b):
+        wetterneu ={data.iloc[i, 2] : (data.iloc[i, 1], data.iloc[i, 0])}
+        wetterstation.update(wetterneu)
+    # markiere alle Standorte
+    for city, coords in wetterstation.items():
+        ax.plot(coords[0], coords[1], 'go', markersize=2)
+        #ax.text(coords[0] - 0.5, coords[1], city, fontsize=10, color='black')
+    
+        ##printe datum
+    ax.plot(6, 52.5, 'ko', markersize=5)
+    ax.text(6 + 0.1 , 52.5 - 0.02, datum[time], fontsize=15, fontweight='bold', color='black')
+
+        ##Waldbrandindex
+    excel_brand = 'Waldbrand2.xlsx'# Pfad zur heruntergeladenen Excel-Datei
+    brand = pd.read_excel(excel_brand)# Lese die Excel-Datei ein
+    df = pd.read_excel(excel_brand)
+    df.to_csv('data.csv', index=False)#in csv datei
+    data = pd.read_csv('data.csv')
+    X = data.drop(columns = ['Samstag']) #schmeißt Brandindex raus
+    y = data['Samstag']# frame mit nur den Brandindex
+
+    model = DecisionTreeClassifier()#decision tree
+    model.fit(X, y)
+
+        ##Anwendung decision tree auf aktuelle Temperatur und Niederschlag aus vorhersage-Array
+    for city, coords in vorhersage.items():
+        predictions = model.predict([[coords[2+g], coords[3+g]]])
+        if predictions == 3:
+            ax.plot(coords[0], coords[1], 'ro', markersize=35)
+            ax.text(coords[0] + 0.15, coords[1], city, fontsize=10, color='black')
+        if predictions == 2:
+            ax.plot(coords[0], coords[1], 'yo', markersize=35)
+            ax.text(coords[0] + 0.15, coords[1], city, fontsize=10, color='black')
+        if predictions == 1:
+            ax.plot(coords[0], coords[1], 'go', markersize=35)
+            ax.text(coords[0] + 0.15, coords[1], city, fontsize=10, color='black')
+    g += 2
+
+        ##speichere karte als jpeg bilder in ordenr
+    output_path = 'diagramm' + str(time) + '.jpeg' # Speichere den Plot als JPEG-Datei
+    plt.savefig(output_path, format='jpeg')
+    destination_folder = 'Karten'  # Verschiebe die Datei in einen anderen Ordner
+    shutil.move(output_path, destination_folder) 
+
+        ##plot Karten
+    plt.title('Karte von NRW')
+    plt.xlabel('Längengrad')
+    plt.ylabel('Breitengrad')
+    plt.grid(True)
+    plt.show()
+
+
+
+
+
+
+import cv2
+import os
+
+#erstelle Video aus den gespeichterten Karten 
+
+# Pfade zu den Bildern und zum Ausgabevideo
+image_folder = 'Karten'
+output_video_path = 'Waldbrand.mp4'
+
+# Größe der Bilder und Framerate des Videos
+frame_width, frame_height = 640, 480
+fps = 1
+
+# Erstelle das Video
+out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+
+# Liste der Dateinamen der Bilder im Ordner
+image_files = sorted([f for f in os.listdir(image_folder) if f.endswith('.jpeg')])
+
+for image_file in image_files:
+    image_path = os.path.join(image_folder, image_file)
+    frame = cv2.imread(image_path)
+    
+    if frame is not None:
+        frame = cv2.resize(frame, (frame_width, frame_height))
+        out.write(frame)
+
+# Videostream und Video-Objekt schließen
+out.release()
+cv2.destroyAllWindows()
+print('ready')

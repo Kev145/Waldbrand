@@ -1,0 +1,68 @@
+pip install matplotlib geopandas
+import numpy as np
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import pandas as pd
+
+'''
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+germany = world[world.name == 'Germany']
+'''
+#NRW-Daten
+nrw_data = gpd.read_file('NRW.json')
+
+# Erstelle eine leere Karte
+fig, ax = plt.subplots(figsize=(10, 8))
+ax.set_aspect('equal')
+
+# Zeichne Deutschland
+nrw_data.plot(ax=ax, color='lightblue')
+
+# Füge Punkte hinzu
+points = {
+    'Cologne': (6.9603, 50.9375),
+    'Münster': (7.6261, 51.9607),
+}
+
+for city, coords in points.items():
+    ax.plot(coords[0], coords[1], 'rv', markersize=5)
+    ax.text(coords[0] - 0.5, coords[1], city, fontsize=10, color='black')
+
+# Wetterstandorte markieren
+# Pfad zur heruntergeladenen Excel-Datei
+excel_path = 'Klimastationen.xlsx'
+
+# Lese die Excel-Datei ein
+data = pd.read_excel(excel_path)
+
+#wie viele zeiteln
+b = len(data)
+wetterstation = {}
+wetterneu ={}
+# erstelle diconary mit {Ort : (Breite,Länge)}
+for i in range(b):
+    wetterneu ={data.iloc[i, 2] : (data.iloc[i, 1], data.iloc[i, 0])}
+    wetterstation.update(wetterneu)
+# markiere alle Standorte
+for city, coords in wetterstation.items():
+    ax.plot(coords[0], coords[1], 'go', markersize=3.5)
+    #ax.text(coords[0] - 0.5, coords[1], city, fontsize=10, color='black')
+    
+'''
+# Lade NRW_gemeinde-Daten
+gemeinde_data = gpd.read_file('NRW_gemeinden.geojson')
+
+# Erstelle eine Karte von Bundesländern
+fig, ax = plt.subplots(figsize=(10, 8))
+
+for bundesland in gemeinde_data['GEN'].unique():
+    alle = gemeinde_data[gemeinde_data['GEN'] == 'bundesland']
+    gemeinde_data.plot(ax=ax, color='lightblue', edgecolor='black')
+'''# zu viele !!!
+
+# Stelle die Karte dar
+plt.title('Karte von NRW')
+plt.xlabel('Längengrad')
+plt.ylabel('Breitengrad')
+plt.grid(True)
+plt.show()

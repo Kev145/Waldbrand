@@ -1,0 +1,36 @@
+pip install matplotlib geopandas
+
+import numpy as np
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import pandas as pd
+
+# Lade NRW-Daten
+nrw_data = gpd.read_file('Bundesländer.json')
+
+# Erstelle eine Karte von Bundesländern
+fig, ax = plt.subplots(figsize=(10, 8))
+
+for bundesland in nrw_data['NAME_1'].unique():
+    #alle = nrw_data[nrw_data['NAME_1'] == 'bundesland']
+    nrw_data.plot(ax=ax, color='lightblue', edgecolor='black')
+    
+# Füge Punkte hinzu
+points = {
+    'Cologne': (6.9603, 50.9375),
+    'Münster': (7.6261, 51.9607),
+}
+
+for city, coords in points.items():
+    ax.plot(coords[0], coords[1], 'rv', markersize=5)
+    ax.text(coords[0] + 0.5 , coords[1], city, fontsize=10, color='black')
+
+# Setze den Titel der Karte
+plt.title('Karte von Deutschland mit Bundesländer')
+
+# Stelle die Karte dar
+plt.title('Karte von Deutschland eingeteilt in Bundesländer')
+plt.xlabel('Längengrad')
+plt.ylabel('Breitengrad')
+plt.grid(True)
+plt.show()
